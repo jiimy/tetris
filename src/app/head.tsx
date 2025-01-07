@@ -28,8 +28,8 @@ interface MetadataProps {
 }
 
 export const metadata: MetadataProps = {
-  title: "PWA with Next 14",
-  description: "PWA application with Next 14",
+  title: "tetris",
+  description: "tetris",
   generator: "Next.js",
   manifest: "/manifest.json",
   keywords: ["nextjs", "nextjs14", "next14", "pwa", "next-pwa"],

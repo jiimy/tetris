@@ -1,5 +1,5 @@
 {
-  "name": "servom",
+  "name": "tetris",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -19,6 +19,7 @@
     "react-cookie": "^7.2.2",
     "react-dom": "^18",
     "react-hook-form": "^7.53.2",
+    "react-uuid": "^2.0.0",
     "sass": "^1.81.0",
     "tailwind-merge": "^2.5.4",
     "zustand": "^5.0.1"
