@@ -11,7 +11,8 @@ const PlayGround = () => {
 
   useEffect(() => {
     const keys = Object.keys(Block);
-    const randomKey = keys[Math.floor(Math.random() * keys.length)]; 
+    const randomKey = keys[Math.floor(Math.random() * keys.length)];
+    console.log('cc', Block[randomKey as keyof typeof Block]);
     setCurrentBlock(Block[randomKey as keyof typeof Block]);
     // console.log('dc: ', Block[randomKey as keyof typeof Block])
   }, [])
@@ -19,24 +20,28 @@ const PlayGround = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setBlockPosition((prev) => ({ ...prev, y: prev.y + 1 })); // 블록 아래로 이동
-    }, 500); // 500ms마다 이동
-    return () => clearInterval(interval); // 컴포넌트 언마운트 시 정리
+      setBlockPosition((prev) => ({ ...prev, y: prev.y + 1 }));
+    }, 2000);
+    return () => clearInterval(interval);
   }, []);
 
-  const renderBlock = (rowIndex: number, colIndex: number) => {
+  const renderBlock = (rowIndex: number, colIndex: number): any => {
     console.log('dd', rowIndex, colIndex, currentBlock)
-    // return currentBlock?.some((blockRow: number[], blockRowIndex: number) =>
-    //   blockRow.some(
-    //     (blockCell, blockColIndex) =>
-    //       blockCell &&
-    //       rowIndex === blockPosition.y + blockRowIndex &&
-    //       colIndex === blockPosition.x + blockColIndex
-    //   )
-    // );
+    if (
+      currentBlock?.some((blockRow: number[], blockRowIndex: number) =>
+        blockRow.some(
+          (blockCell, blockColIndex) =>
+            blockCell &&
+            rowIndex === blockPosition.y + blockRowIndex &&
+            colIndex === blockPosition.x + blockColIndex
+        )
+      )
+    ) {
+      return true;
+    }
   };
 
-
+  // console.log('cc', currentBlock)
 
   return (
     <div
@@ -46,8 +51,22 @@ const PlayGround = () => {
         gap: "1px",
       }}
     >
-      {/* {field.flatMap((row, rowIndex) =>
-        row.map((cell:any, colIndex:any) => {
+      {/* {field.flat().map((cell, index) => (
+        <div
+          key={index}
+          style={{
+            width: "20px",
+            height: "20px",
+            backgroundColor: cell ? "blue" : "white",
+            border: "1px solid #ccc",
+          }}
+        >{cell}</div>
+      ))} */}
+
+
+      {field.map((row, rowIndex) =>
+        row.map((cell: any, colIndex: any) => {
+
           const isBlockPart = renderBlock(rowIndex, colIndex);
           return (
             <div
@@ -61,7 +80,21 @@ const PlayGround = () => {
             ></div>
           );
         })
-      )} */}
+      )}
+      {/* // row.map((cell: any, colIndex: any) => {
+        //   const isBlockPart = renderBlock(rowIndex, colIndex);
+        //   return (
+        //     <div
+        //       key={`${rowIndex}-${colIndex}`}
+        //       style={{
+        //         width: "20px",
+        //         height: "20px",
+        //         backgroundColor: isBlockPart ? "blue" : "white",
+        //         border: "1px solid #ccc",
+        //       }}
+        //     ></div>
+        //   );
+        // }) */}
     </div>
   );
 };
