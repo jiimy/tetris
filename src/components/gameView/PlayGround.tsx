@@ -12,36 +12,89 @@ const PlayGround = () => {
   useEffect(() => {
     const keys = Object.keys(Block);
     const randomKey = keys[Math.floor(Math.random() * keys.length)];
-    console.log('cc', Block[randomKey as keyof typeof Block]);
     setCurrentBlock(Block[randomKey as keyof typeof Block]);
-    // console.log('dc: ', Block[randomKey as keyof typeof Block])
   }, [])
 
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setBlockPosition((prev) => ({ ...prev, y: prev.y + 1 }));
-    }, 2000);
+      // setBlockPosition((prev) => {
+      //   if (prev.y < field.length - 4) {
+      //     return { ...prev, y: prev.y + 1 };
+      //   } else {
+      //     return prev;
+      //   }
+      // });
+      moveBlock('down');
+
+    }, 500);
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      switch (e.key) {
+        case 'ArrowLeft':
+          moveBlock('left');
+          break;
+        case 'ArrowRight':
+          moveBlock('right');
+          break;
+        case 'ArrowDown':
+          moveBlock('down');
+          break;
+        case 'ArrowUp':
+          rotateBlock();
+          break;
+        case ' ': // Spacebar
+          dropBlock();
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [blockPosition, currentBlock]);
+
+  const moveBlock = (direction: 'left' | 'right' | 'down') => {
+    setBlockPosition((prev) => {
+      const newPosition = { ...prev };
+      if (direction === 'left' && prev.x > 0) newPosition.x -= 1;
+      if (direction === 'right' && prev.x < STAGE_WIDTH - currentBlock[0].length) newPosition.x += 1;
+      if (direction === 'down' && prev.y < field.length - currentBlock.length) newPosition.y += 1;
+      return newPosition;
+    });
+  };
+
+  const rotateBlock = () => {
+    if (!currentBlock) return;
+    const rotatedBlock = currentBlock[0].map((_: any, index: any) =>
+      currentBlock.map((row: any) => row[index]).reverse()
+    );
+
+    setCurrentBlock(rotatedBlock);
+  };
+
+  const dropBlock = () => {
+    setBlockPosition((prev) => ({ ...prev, y: field.length - currentBlock.length }));
+  };
+
+
   const renderBlock = (rowIndex: number, colIndex: number): any => {
-    console.log('dd', rowIndex, colIndex, currentBlock)
     if (
       currentBlock?.some((blockRow: number[], blockRowIndex: number) =>
-        blockRow.some(
-          (blockCell, blockColIndex) =>
-            blockCell &&
-            rowIndex === blockPosition.y + blockRowIndex &&
-            colIndex === blockPosition.x + blockColIndex
+        // O 블록이라면 blockRow = [1 1 0 0], blockRowIndw 0 
+        // O 블록이라면 blockRow = [1 1 0 0], blockRowIndw 1
+        blockRow.some((blockCell, blockColIndex) =>
+          blockCell &&
+          rowIndex === blockPosition.y + blockRowIndex &&
+          colIndex === blockPosition.x + blockColIndex
         )
       )
     ) {
       return true;
     }
   };
-
-  // console.log('cc', currentBlock)
 
   return (
     <div
@@ -51,19 +104,6 @@ const PlayGround = () => {
         gap: "1px",
       }}
     >
-      {/* {field.flat().map((cell, index) => (
-        <div
-          key={index}
-          style={{
-            width: "20px",
-            height: "20px",
-            backgroundColor: cell ? "blue" : "white",
-            border: "1px solid #ccc",
-          }}
-        >{cell}</div>
-      ))} */}
-
-
       {field.map((row, rowIndex) =>
         row.map((cell: any, colIndex: any) => {
 
@@ -75,26 +115,15 @@ const PlayGround = () => {
                 width: "20px",
                 height: "20px",
                 backgroundColor: isBlockPart ? "blue" : "white",
+                // backgroundColor: 'red',
                 border: "1px solid #ccc",
               }}
+              data-row={rowIndex}
+              data-col={colIndex}
             ></div>
           );
         })
       )}
-      {/* // row.map((cell: any, colIndex: any) => {
-        //   const isBlockPart = renderBlock(rowIndex, colIndex);
-        //   return (
-        //     <div
-        //       key={`${rowIndex}-${colIndex}`}
-        //       style={{
-        //         width: "20px",
-        //         height: "20px",
-        //         backgroundColor: isBlockPart ? "blue" : "white",
-        //         border: "1px solid #ccc",
-        //       }}
-        //     ></div>
-        //   );
-        // }) */}
     </div>
   );
 };
