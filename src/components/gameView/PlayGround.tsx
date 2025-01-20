@@ -20,7 +20,7 @@ const PlayGround = () => {
     const randomKey = keys[Math.floor(Math.random() * keys.length)];
     setCurrentBlock(Block[randomKey as keyof typeof Block]);
     setBlockPosition({ x: 4, y: 0 });
-    // setIsFrozen(false);
+    setIsFrozen(false);
   };
 
 
@@ -69,7 +69,7 @@ const PlayGround = () => {
         if (!checkCollision(prev.y + 1, prev.x)) {
           newPosition.y += 1;
         } else {
-          // handleFreeze();
+          handleFreeze();
         }
       }
       return newPosition;
@@ -95,7 +95,7 @@ const PlayGround = () => {
       newY += 1;
     }
     setBlockPosition((prev) => ({ ...prev, y: newY }));
-    // handleFreeze();
+    handleFreeze();
   };
 
   const checkCollision = (y: number, x: number, testBlock = currentBlock): boolean => {
@@ -110,34 +110,43 @@ const PlayGround = () => {
 
 
   const handleFreeze = () => {
-    setIsFrozen(true); // 블록 이동 멈추기
+    setIsFrozen(true);
 
-    // 2초 후 고정
     setTimeout(() => {
       setBoard((prevBoard) => {
-        const newBoard = [...prevBoard];
-        currentBlock.forEach((blockRow: any[], blockRowIndex: number) => {
+        const newBoard = prevBoard.map((row) => [...row]);
+
+        currentBlock.forEach((blockRow: number[], blockRowIndex: number) => {
           blockRow.forEach((blockCell, blockColIndex) => {
             if (blockCell) {
-              newBoard[blockPosition.y + blockRowIndex][blockPosition.x + blockColIndex] = blockCell;
+              const y = blockPosition.y + blockRowIndex; // y 좌표
+              const x = blockPosition.x + blockColIndex; // x 좌표
+
+              if (y >= 0 && y < newBoard.length && x >= 0 && x < newBoard[0].length) {
+                newBoard[y][x] = blockCell;
+              }
             }
           });
         });
-        console.log('newBoard: ', newBoard);
+
         return newBoard;
       });
 
       spawnNewBlock();
+      setIsFrozen(false); // 다시 이동 가능 상태로
     }, 2000);
   };
 
 
 
-  const renderBlock = (rowIndex: number, colIndex: number): any => {
+
+
+
+  // O 블록이라면 blockRow = [1 1 0 0], blockRowIndw 0 
+  // O 블록이라면 blockRow = [1 1 0 0], blockRowIndw 1
+  const renderBlock = (rowIndex: number, colIndex: number): boolean => {
     if (
       currentBlock?.some((blockRow: number[], blockRowIndex: number) =>
-        // O 블록이라면 blockRow = [1 1 0 0], blockRowIndw 0 
-        // O 블록이라면 blockRow = [1 1 0 0], blockRowIndw 1
         blockRow.some((blockCell, blockColIndex) =>
           blockCell &&
           rowIndex === blockPosition.y + blockRowIndex &&
@@ -147,7 +156,10 @@ const PlayGround = () => {
     ) {
       return true;
     }
+
+    return board[rowIndex][colIndex] === 1;
   };
+
 
   return (
     <div
@@ -157,7 +169,7 @@ const PlayGround = () => {
         gap: "1px",
       }}
     >
-      {field.map((row, rowIndex) =>
+      {board.map((row, rowIndex) =>
         row.map((cell: any, colIndex: any) => {
 
           const isBlockPart = renderBlock(rowIndex, colIndex);
