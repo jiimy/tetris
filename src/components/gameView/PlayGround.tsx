@@ -60,21 +60,30 @@ const PlayGround = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [blockPosition, currentBlock, isFrozen]);
 
+
   const moveBlock = (direction: 'left' | 'right' | 'down') => {
     setBlockPosition((prev) => {
       const newPosition = { ...prev };
-      if (direction === 'left' && prev.x > 0) newPosition.x -= 1;
-      if (direction === 'right' && prev.x < STAGE_WIDTH - currentBlock[0].length) newPosition.x += 1;
+
+      if (direction === 'left' && !checkCollision(prev.y, prev.x - 1)) {
+        newPosition.x -= 1;
+      }
+      if (direction === 'right' && !checkCollision(prev.y, prev.x + 1)) {
+        newPosition.x += 1;
+      }
       if (direction === 'down') {
         if (!checkCollision(prev.y + 1, prev.x)) {
           newPosition.y += 1;
         } else {
-          handleFreeze();
+          handleFreeze(prev.y);
         }
       }
+
       return newPosition;
     });
   };
+
+
 
 
   const rotateBlock = () => {
@@ -94,57 +103,62 @@ const PlayGround = () => {
     while (!checkCollision(newY + 1, blockPosition.x)) {
       newY += 1;
     }
-    setBlockPosition((prev) => ({ ...prev, y: newY }));
-    handleFreeze();
+
+    setBlockPosition({ ...blockPosition, y: newY });
+
+    handleFreeze(newY);
   };
 
+
   const checkCollision = (y: number, x: number, testBlock = currentBlock): boolean => {
-    return testBlock.some((blockRow: any[], blockRowIndex: number) =>
+    return testBlock.some((blockRow: number[], blockRowIndex: number) =>
       blockRow.some(
         (blockCell, blockColIndex) =>
           blockCell &&
-          (y + blockRowIndex >= field.length || board[y + blockRowIndex]?.[x + blockColIndex])
+          (y + blockRowIndex >= field.length ||
+            x + blockColIndex < 0 ||
+            x + blockColIndex >= STAGE_WIDTH ||
+            board[y + blockRowIndex]?.[x + blockColIndex]) // 이미 고정된 블록과 겹치면 충돌
       )
     );
   };
 
 
-  const handleFreeze = () => {
+
+  const handleFreeze = (freezeY?: number) => {
     setIsFrozen(true);
 
-    setTimeout(() => {
-      setBoard((prevBoard) => {
-        const newBoard = prevBoard.map((row) => [...row]);
+    setBoard((prevBoard) => {
+      const newBoard = prevBoard.map((row) => [...row]);
 
-        currentBlock.forEach((blockRow: number[], blockRowIndex: number) => {
-          blockRow.forEach((blockCell, blockColIndex) => {
-            if (blockCell) {
-              const y = blockPosition.y + blockRowIndex; // y 좌표
-              const x = blockPosition.x + blockColIndex; // x 좌표
+      currentBlock.forEach((blockRow: number[], blockRowIndex: number) => {
+        blockRow.forEach((blockCell, blockColIndex) => {
+          if (blockCell) {
+            const y = (freezeY ?? blockPosition.y) + blockRowIndex;
+            const x = blockPosition.x + blockColIndex;
 
-              if (y >= 0 && y < newBoard.length && x >= 0 && x < newBoard[0].length) {
-                newBoard[y][x] = blockCell;
-              }
+            if (y >= 0 && y < newBoard.length && x >= 0 && x < newBoard[0].length) {
+              newBoard[y][x] = 1; // 블록 고정
             }
-          });
+          }
         });
-
-        return newBoard;
       });
 
+      return newBoard;
+    });
+
+    // 새로운 블록 생성
+    setTimeout(() => {
       spawnNewBlock();
-      setIsFrozen(false); // 다시 이동 가능 상태로
-    }, 2000);
+      setIsFrozen(false);
+    }, 1000);
   };
-
-
-
-
 
 
   // O 블록이라면 blockRow = [1 1 0 0], blockRowIndw 0 
   // O 블록이라면 blockRow = [1 1 0 0], blockRowIndw 1
   const renderBlock = (rowIndex: number, colIndex: number): boolean => {
+    // 움직이는 블록 렌더링
     if (
       currentBlock?.some((blockRow: number[], blockRowIndex: number) =>
         blockRow.some((blockCell, blockColIndex) =>
@@ -159,6 +173,7 @@ const PlayGround = () => {
 
     return board[rowIndex][colIndex] === 1;
   };
+
 
 
   return (
