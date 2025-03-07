@@ -10,10 +10,15 @@ const PlayGround = () => {
   const [blockPosition, setBlockPosition] = useState({ x: 4, y: 0 }); // 블록 위치
   const [isFrozen, setIsFrozen] = useState(false);
   const [board, setBoard] = useState(field);
+  const [isGameStarted, setIsGameStarted] = useState(false); // 게임 시작 여부
+  const [isPaused, setIsPaused] = useState(false); // 게임 일시정지 여부
+  const [score, setScore] = useState(0); // 점수
 
   useEffect(() => {
-    spawnNewBlock();
-  }, []);
+    if (isGameStarted && !isPaused) {
+      spawnNewBlock();
+    }
+  }, [isGameStarted]);
 
   const spawnNewBlock = () => {
     const keys = Object.keys(Block);
@@ -23,19 +28,25 @@ const PlayGround = () => {
     setIsFrozen(false);
   };
 
-
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (!isFrozen) {
-        moveBlock('down');
-      }
-    }, 500);
-    return () => clearInterval(interval);
-  }, [blockPosition, isFrozen]);
+    if (isGameStarted && !isPaused) {
+      const interval = setInterval(() => {
+        if (!isFrozen) {
+          moveBlock('down');
+        }
+      }, 500);
+      return () => clearInterval(interval);
+    }
+  }, [blockPosition, isFrozen, isGameStarted, isPaused]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (isFrozen) return;
+      if (e.key === 'Enter' && !isGameStarted) {
+        setIsGameStarted(true);
+        return;
+      }
+
+      if (isFrozen || !isGameStarted || isPaused) return;
 
       switch (e.key) {
         case 'ArrowLeft':
@@ -58,8 +69,7 @@ const PlayGround = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [blockPosition, currentBlock, isFrozen]);
-
+  }, [blockPosition, currentBlock, isFrozen, isGameStarted, isPaused]);
 
   const moveBlock = (direction: 'left' | 'right' | 'down') => {
     setBlockPosition((prev) => {
@@ -82,9 +92,6 @@ const PlayGround = () => {
       return newPosition;
     });
   };
-
-
-
 
   const rotateBlock = () => {
     if (!currentBlock) return;
@@ -109,7 +116,6 @@ const PlayGround = () => {
     handleFreeze(newY);
   };
 
-
   const checkCollision = (y: number, x: number, testBlock = currentBlock): boolean => {
     return testBlock.some((blockRow: number[], blockRowIndex: number) =>
       blockRow.some(
@@ -123,7 +129,15 @@ const PlayGround = () => {
     );
   };
 
-
+  const checkFullLines = () => {
+    setBoard((prevBoard) => {
+      const newBoard = prevBoard.filter(row => row.some((cell: any) => cell === 0));
+      const linesCleared = prevBoard.length - newBoard.length;
+      const emptyRows = Array.from({ length: linesCleared }, () => Array(STAGE_WIDTH).fill(0));
+      setScore((prevScore) => prevScore + linesCleared * 10 * linesCleared); // 점수 계산
+      return [...emptyRows, ...newBoard];
+    });
+  };
 
   const handleFreeze = (freezeY?: number) => {
     setIsFrozen(true);
@@ -147,16 +161,17 @@ const PlayGround = () => {
       return newBoard;
     });
 
+    checkFullLines(); // 라인 체크 및 제거
+
     // 새로운 블록 생성
     setTimeout(() => {
-      spawnNewBlock();
-      setIsFrozen(false);
+      if (!isPaused) {
+        spawnNewBlock();
+        setIsFrozen(false);
+      }
     }, 1000);
   };
 
-
-  // O 블록이라면 blockRow = [1 1 0 0], blockRowIndw 0 
-  // O 블록이라면 blockRow = [1 1 0 0], blockRowIndw 1
   const renderBlock = (rowIndex: number, colIndex: number): boolean => {
     // 움직이는 블록 렌더링
     if (
@@ -174,36 +189,43 @@ const PlayGround = () => {
     return board[rowIndex][colIndex] === 1;
   };
 
-
-
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: `repeat(${STAGE_WIDTH}, 20px)`,
-        gap: "1px",
-      }}
-    >
-      {board.map((row, rowIndex) =>
-        row.map((cell: any, colIndex: any) => {
-
-          const isBlockPart = renderBlock(rowIndex, colIndex);
-          return (
-            <div
-              key={`${rowIndex}-${colIndex}`}
-              style={{
-                width: "20px",
-                height: "20px",
-                backgroundColor: isBlockPart ? "blue" : "white",
-                // backgroundColor: 'red',
-                border: "1px solid #ccc",
-              }}
-              data-row={rowIndex}
-              data-col={colIndex}
-            ></div>
-          );
-        })
+    <div>
+      {!isGameStarted && (
+        <button onClick={() => setIsGameStarted(true)}>게임 시작 (Enter)</button>
       )}
+      {isGameStarted && (
+        <button onClick={() => setIsPaused(!isPaused)}>
+          {isPaused ? '게임 재개' : '일시정지'}
+        </button>
+      )}
+      <div>점수: {score}</div>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: `repeat(${STAGE_WIDTH}, 20px)`,
+          gap: "1px",
+        }}
+      >
+        {board.map((row, rowIndex) =>
+          row.map((cell: any, colIndex: any) => {
+            const isBlockPart = renderBlock(rowIndex, colIndex);
+            return (
+              <div
+                key={`${rowIndex}-${colIndex}`}
+                style={{
+                  width: "20px",
+                  height: "20px",
+                  backgroundColor: isBlockPart ? "blue" : "white",
+                  border: "1px solid #ccc",
+                }}
+                data-row={rowIndex}
+                data-col={colIndex}
+              ></div>
+            );
+          })
+        )}
+      </div>
     </div>
   );
 };
