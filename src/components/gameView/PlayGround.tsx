@@ -4,9 +4,21 @@ import { field, STAGE_WIDTH } from '@/constants/Board';
 import { random } from 'lodash';
 import React, { useEffect, useState } from 'react';
 import { clearLine } from 'readline';
+import NextBlock from './NextBlock';
+
+const NEXT_BLOCK_COUNT = 3; // 미리보기로 보여줄 다음 블록 개수
+
+const getRandomBlock = (): number[][] => {
+  const keys = Object.keys(Block);
+  const randomKey = keys[Math.floor(Math.random() * keys.length)];
+  return Block[randomKey as keyof typeof Block];
+};
 
 const PlayGround = () => {
   const [currentBlock, setCurrentBlock] = useState<any>([]); // 현재 블록
+  const [nextBlocks, setNextBlocks] = useState<number[][][]>(() =>
+    Array.from({ length: NEXT_BLOCK_COUNT }, () => getRandomBlock())
+  ); // 다음 블록들 (3개 미리보기)
   const [blockPosition, setBlockPosition] = useState({ x: 4, y: 0 }); // 블록 위치
   const [isFrozen, setIsFrozen] = useState(false);
   const [board, setBoard] = useState(field);
@@ -21,9 +33,8 @@ const PlayGround = () => {
   }, [isGameStarted]);
 
   const spawnNewBlock = () => {
-    const keys = Object.keys(Block);
-    const randomKey = keys[Math.floor(Math.random() * keys.length)];
-    setCurrentBlock(Block[randomKey as keyof typeof Block]);
+    setCurrentBlock(nextBlocks[0]);
+    setNextBlocks((prev) => [...prev.slice(1), getRandomBlock()]);
     setBlockPosition({ x: 4, y: 0 });
     setIsFrozen(false);
   };
@@ -200,31 +211,34 @@ const PlayGround = () => {
         </button>
       )}
       <div>점수: {score}</div>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: `repeat(${STAGE_WIDTH}, 20px)`,
-          gap: "1px",
-        }}
-      >
-        {board.map((row, rowIndex) =>
-          row.map((cell: any, colIndex: any) => {
-            const isBlockPart = renderBlock(rowIndex, colIndex);
-            return (
-              <div
-                key={`${rowIndex}-${colIndex}`}
-                style={{
-                  width: "20px",
-                  height: "20px",
-                  backgroundColor: isBlockPart ? "blue" : "white",
-                  border: "1px solid #ccc",
-                }}
-                data-row={rowIndex}
-                data-col={colIndex}
-              ></div>
-            );
-          })
-        )}
+      <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: `repeat(${STAGE_WIDTH}, 20px)`,
+            gap: "1px",
+          }}
+        >
+          {board.map((row, rowIndex) =>
+            row.map((cell: any, colIndex: any) => {
+              const isBlockPart = renderBlock(rowIndex, colIndex);
+              return (
+                <div
+                  key={`${rowIndex}-${colIndex}`}
+                  style={{
+                    width: "20px",
+                    height: "20px",
+                    backgroundColor: isBlockPart ? "blue" : "white",
+                    border: "1px solid #ccc",
+                  }}
+                  data-row={rowIndex}
+                  data-col={colIndex}
+                ></div>
+              );
+            })
+          )}
+        </div>
+        <NextBlock blocks={nextBlocks} />
       </div>
     </div>
   );
