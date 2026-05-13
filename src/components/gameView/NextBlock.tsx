@@ -6,7 +6,7 @@ interface NextBlockProps {
 
 const NextBlock = ({ blocks }: NextBlockProps) => {
   return (
-    <div style={{ marginTop: 8 }}>
+    <div className="w-[100px]">
       <div style={{ marginBottom: 4 }}>다음 블록</div>
       <div
         style={{
